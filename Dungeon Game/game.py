@@ -305,12 +305,13 @@ class MyApplication(arcade.Window):
                 self.wall_list.append(wall)
                 break
 
-        # Create a randomly chosen wall sprite where all the wall blocks should  be.
-        wall_textures = []
-        wall_textures.append(path / "images/tile_1.png")
-        wall_textures.append(path / "images/tile_2.png")
-        wall_textures.append(path / "images/tile_3.png")
-        wall_textures.append(path / "images/tile_4.png")
+        # Create a randomly chosen wall sprite where all the wall blocks
+        # should  be.
+        with open(path / 'wall_textures.txt', 'r') as f:
+            wall_textures = f.read().splitlines()
+
+            for wall_texture in wall_textures:
+                wall_textures.append(path / wall_texture)
 
         for (x, y) in product(range(BR_X), range(BR_Y)):
             if self.blocks[x][y]:
