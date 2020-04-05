@@ -23,10 +23,16 @@ https://freesound.org/people/Christopherderp/sounds/342231/
 https://freesound.org/people/isteak/sounds/387232/
 """
 
+from projectiles import Arrow, Fireball
+
 import random
 import arcade
 import math
 import sys
+from pathlib import Path
+
+
+path = Path(__file__).parent
 
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
@@ -40,19 +46,6 @@ BR_Y = 48
 VIEWPORT_MARGIN = 200
 
 MOVEMENT_SPEED = 3
-
-
-class Arrow(arcade.Sprite):
-    def update(self):
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-
-
-class Fireball(arcade.Sprite):
-    def update(self):
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-        self.angle += 20
 
 
 class Enemy(arcade.Sprite):
@@ -135,9 +128,9 @@ class MyApplication(arcade.Window):
         # High Scores
         self.highscore_sound = False
         self.highscore = 0
-        file = open("scores.txt")
-        for items in file:
-            self.highscore = int(items.strip())
+        with open(path / 'scores.txt', 'r') as f:
+            for items in f:
+                self.highscore = int(items.strip())
 
         # Game Variables
         self.game_started = False
@@ -168,12 +161,17 @@ class MyApplication(arcade.Window):
         self.knife_rate = 0
 
         # Map Generation Variables
-        self.blocks = [[True for useless in range(BR_Y)] for useless in range(BR_X)]
+        # self.blocks = [
+        #     [True for _ in range(BR_Y)] for _ in range(BR_X)
+        # ]
         self.doorpos = 0
 
         # Textures
-        self.chest_texture = arcade.load_texture("images/chest_opened.png")
-        self.controls = arcade.load_texture("images/controls.png")
+        image_file = path / "images/chest_opened.png"
+        self.chest_texture = arcade.load_texture(image_file)
+
+        image_file = path / "images/controls.png"
+        self.controls = arcade.load_texture(image_file)
 
         # Sounds
         self.sound_list = []
@@ -187,7 +185,7 @@ class MyApplication(arcade.Window):
         self.sound_list.append(arcade.load_sound("sounds/char_pain_1.ogg"))
         self.sound_list.append(arcade.load_sound("sounds/char_pain_2.ogg"))
         self.sound_list.append(arcade.load_sound("sounds/char_pain_3.ogg"))
-        self.sound_list.append(arcade.load_sound("sounds/char_die.ogg"))    # 10
+        self.sound_list.append(arcade.load_sound("sounds/char_die.ogg")
         self.sound_list.append(arcade.load_sound("sounds/arrow_hit.ogg"))
         self.sound_list.append(arcade.load_sound("sounds/chest_open.ogg"))
         self.sound_list.append(arcade.load_sound("sounds/knife_swing.ogg"))
@@ -209,15 +207,17 @@ class MyApplication(arcade.Window):
         self.effect_list = arcade.SpriteList()
 
         # Set up the player
-        self.player_sprite = arcade.Sprite("images/archer/right.png", 1)
-        self.player_sprite.append_texture(arcade.load_texture("images/archer/left.png"))
-        self.player_sprite.append_texture(arcade.load_texture("images/archer/up.png"))
-        self.player_sprite.append_texture(arcade.load_texture("images/archer/down.png"))
-        self.player_sprite.append_texture(arcade.load_texture("images/dead.png"))
-        self.player_sprite.append_texture(arcade.load_texture("images/archer/stab_up.png"))
-        self.player_sprite.append_texture(arcade.load_texture("images/archer/stab_right.png"))
-        self.player_sprite.append_texture(arcade.load_texture("images/archer/stab_left.png"))
-        self.player_sprite.append_texture(arcade.load_texture("images/archer/stab_down.png"))
+        with open(path / 'player_textures.txt', 'r') as f:
+            image_files = f.read().splitlines()
+
+            # Initialize player sprite
+            self.player_sprite = arcade.Sprite(image_files[0])
+
+            # Load the rest of the textures
+            for image_file in image_files[1:]:
+                texture = arcade.load_texture(path / image_file)
+                self.player_sprite.append_texture(texture)
+
         self.player_sprite.center_x = 1 * 32
         self.player_sprite.center_y = 5 * 32
         self.player_sprite.eye_pos = "right"
@@ -228,9 +228,9 @@ class MyApplication(arcade.Window):
         self.view_bottom = 0
 
         # Enemy Textures
-        self.demon_die_1 = arcade.load_texture("images/demon_die_1.png")
-        self.demon_die_2 = arcade.load_texture("images/demon_die_2.png")
-        self.demon_slash = arcade.load_texture("images/demon_slash.png")
+        self.demon_die_1 = arcade.load_texture(path / "images/demon_die_1.png")
+        self.demon_die_2 = arcade.load_texture(path / "images/demon_die_2.png")
+        self.demon_slash = arcade.load_texture(path / "images/demon_slash.png")
 
         # Text
         self.ammo_text = None
@@ -238,12 +238,14 @@ class MyApplication(arcade.Window):
         self.score_text = None
 
         # Map Generation
-        self.blocks = [[True for useless in range(BR_Y)] for useless in range(BR_X)]
+        self.blocks = [[True for _ in range(BR_Y)] for _ in range(BR_X)]
         self.direction = "right"
         self.ng_x = 0
         self.ng_y = 0
 
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
+        self.physics_engine = arcade.PhysicsEngineSimple(
+            self.player_sprite, self.wall_list
+        )
         arcade.set_background_color(arcade.color.BLACK)
         self.generate_map()
         arcade.play_sound(self.sound_list[0])

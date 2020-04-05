@@ -1,0 +1,9 @@
+images/archer/right.png
+images/archer/left.png
+images/archer/up.png
+images/archer/down.png
+images/dead.png
+images/archer/stab_up.png
+images/archer/stab_right.png
+images/archer/stab_left.png
+images/archer/stab_down.png

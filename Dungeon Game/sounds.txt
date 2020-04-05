@@ -1,0 +1,17 @@
+sounds/default.ogg
+sounds/bow_shoot.ogg
+sounds/pickup_coin.ogg
+sounds/gulp.ogg
+sounds/fireball.ogg
+sounds/demon_growl.ogg
+sounds/demon_die.ogg
+sounds/char_pain_1.ogg
+sounds/char_pain_2.ogg
+sounds/char_pain_3.ogg
+sounds/char_die.ogg
+sounds/arrow_hit.ogg
+sounds/chest_open.ogg
+sounds/knife_swing.ogg
+sounds/knife_hit.ogg
+sounds/highscore.ogg
+sounds/coin_pickup.ogg
