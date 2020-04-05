@@ -30,6 +30,7 @@ import arcade
 import math
 import sys
 from pathlib import Path
+from itertools import product
 
 
 path = Path(__file__).parent
@@ -310,59 +311,58 @@ class MyApplication(arcade.Window):
         wall_textures.append(path / "images/tile_2.png")
         wall_textures.append(path / "images/tile_3.png")
         wall_textures.append(path / "images/tile_4.png")
-        for x in range(BR_X):
-            for y in range(BR_Y):
-                if self.blocks[x][y]:
-                    wall = arcade.Sprite(random.choice(wall_textures), 1)
-                    wall.center_x = x * 32
-                    wall.center_y = y * 32
-                    self.all_sprites_list.append(wall)
-                    self.wall_list.append(wall)
 
-        # Create the items and enemies randomly around the map.
-        for x in range(BR_X):
-            for y in range(BR_Y):
-                if not self.blocks[x][y]:
-                    # Each time you enter a new room increase the chance for enemies to spawn
-                    difficulty = 17 - self.room
-                    if difficulty <= 0:
-                        difficulty = 0
+        for (x, y) in product(range(BR_X), range(BR_Y)):
+            if self.blocks[x][y]:
+                # Create walls
+                wall = arcade.Sprite(random.choice(wall_textures))
+                wall.center_x = x * 32
+                wall.center_y = y * 32
+                self.all_sprites_list.append(wall)
+                self.wall_list.append(wall)
+            else:
+                # Spawn random items and enemies
+                # Each room you enter, enemy increases
+                difficulty = 17 - self.room
+                if difficulty <= 0:
+                    difficulty = 0
 
-                    # Randomly place chests
-                    if random.randint(1, 50) == 5:
-                        chest = arcade.Sprite("images/chest_closed.png", .75)
-                        chest.center_x = x * 32
-                        chest.center_y = y * 32
-                        chest.append_texture(self.chest_texture)
-                        self.all_sprites_list.append(chest)
-                        self.chest_list.append(chest)
-                    elif random.randint(1, 3 + difficulty) == 2:
-                        # Randomly place enemies away from spawn
-                        if x > 7:
-                            enemy = Enemy("images/demon.png", .75)
-                            enemy.center_x = x * 32
-                            enemy.center_y = y * 32
-                            enemy.player = self.player_sprite
-                            enemy.fireball_list = self.fireball_list
-                            enemy.sound_mapping = self.sound_mapping
-                            enemy.coin_list = self.coin_list
-                            enemy.curtime = 0
-                            enemy.delay = 0
-                            enemy.growl = False
-                            enemy.health = 100
-                            enemy.death_animation = 0
-                            enemy.append_texture(self.demon_die_1)
-                            enemy.append_texture(self.demon_die_2)
-                            enemy.append_texture(self.demon_slash)
-                            self.all_sprites_list.append(enemy)
-                            self.enemy_list.append(enemy)
+                # Randomly place chests
+                if random.randint(1, 50) == 5:
+                    # Spawned slightly smaller than the actual grid
+                    chest = arcade.Sprite("images/chest_closed.png", .75)
+                    chest.center_x = x * 32
+                    chest.center_y = y * 32
+                    chest.append_texture(self.chest_texture)
+                    self.all_sprites_list.append(chest)
+                    self.chest_list.append(chest)
+                elif random.randint(1, 3 + difficulty) == 2:
+                    # Randomly place enemies away from spawn
+                    if x > 7:
+                        enemy = Enemy("images/demon.png", .75)
+                        enemy.center_x = x * 32
+                        enemy.center_y = y * 32
+                        enemy.player = self.player_sprite
+                        enemy.fireball_list = self.fireball_list
+                        enemy.sound_mapping = self.sound_mapping
+                        enemy.coin_list = self.coin_list
+                        enemy.curtime = 0
+                        enemy.delay = 0
+                        enemy.growl = False
+                        enemy.health = 100
+                        enemy.death_animation = 0
+                        enemy.append_texture(self.demon_die_1)
+                        enemy.append_texture(self.demon_die_2)
+                        enemy.append_texture(self.demon_slash)
+                        self.all_sprites_list.append(enemy)
+                        self.enemy_list.append(enemy)
 
         # Just a random easter egg
         if anti_crash == 777:
             arcade.set_background_color(arcade.color.BLIZZARD_BLUE)
 
         # Create end door
-        wall = arcade.Sprite("images/castle_door_closed.png", 1)
+        wall = arcade.Sprite(path / "images/castle_door_closed.png", 1)
         wall.center_x = 0
         wall.center_y = 5 * 32
         self.all_sprites_list.append(wall)
