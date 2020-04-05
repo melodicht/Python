@@ -333,37 +333,44 @@ class MyApplication(arcade.Window):
         # If you get a high score change the text
         if self.highscore_sound:
             # Render the high-score text
-            output = "High Score: " + str(self.highscore)
-            if not self.highscore_text or self.highscore_text != output:
-                self.highscore_text = arcade.create_text(output, arcade.color.YELLOW, 14)
-
-            arcade.render_text(self.highscore_text, self.view_left + 8, self.view_bottom + 365)
+            highscore_text = "High Score: " + str(self.highscore)
+            arcade.draw_text(highscore_text, self.view_left + 8,
+                             self.view_bottom + 365, arcade.color.YELLOW,
+                             font_size=14)
         else:
             # Render the score text
-            output = "Score: " + str(self.score) + " (" + str(self.highscore) + ")"
-            if not self.score_text or self.score_text != output:
-                self.score_text = arcade.create_text(output, arcade.color.GREEN, 10)
-
-            arcade.render_text(self.score_text, self.view_left + 8, self.view_bottom + 365)
+            score_text = ("Score: " + str(self.score) +
+                          " (" + str(self.highscore) + ")")
+            arcade.draw_text(score_text, self.view_left + 8,
+                             self.view_bottom + 365,
+                             arcade.color.GREEN, font_size=10)
 
         if self.player_sprite.alive:
             # Render the arrow count text
-            output = "Arrows: " + str(self.ammo)
-            if not self.ammo_text or self.ammo_text != output:
-                self.ammo_text = arcade.create_text(output, arcade.color.WHITE, 12)
+            arrow_text = ''.join(["Arrows:", str(self.ammo)])
+            arcade.draw_text(arrow_text, self.view_left + 8,
+                             self.view_bottom + 8, arcade.color.WHITE)
 
-            arcade.render_text(self.ammo_text, self.view_left + 8, self.view_bottom + 8)
-
-            # Draw Health bar
+            # Draw health bar, red first, then green
             x = self.player_sprite.center_x
-            y = self.player_sprite.center_y
+            y = self.player_sprite.center_y 
             arcade.draw_rectangle_filled(x, y - 16, 24, 4, (255, 0, 0))
-            arcade.draw_rectangle_filled(x - math.ceil((24 - (self.health / 4.16)) / 2), y - 16, math.ceil(self.health / 4.16), 4, (0, 255, 0))
+            arcade.draw_rectangle_filled(
+                x - math.ceil((24 - (self.health / 4.16)) / 2),
+                y - 16,
+                width=math.ceil(self.health / 4.16),
+                height=4,
+                color=(0, 255, 0)
+            )
 
         # Death screen
         if not self.player_sprite.alive:
-            arcade.draw_text("You died!", self.player_sprite.center_x - 125, self.player_sprite.center_y, (200, 20, 20), 48)
-            arcade.draw_text("Press R To Restart", self.player_sprite.center_x - 125, self.player_sprite.center_y - 125, (200, 20, 20), 24)
+            arcade.draw_text("You died!", self.player_sprite.center_x - 125,
+                             self.player_sprite.center_y, (200, 20, 20), 48)
+            arcade.draw_text("Press R To Restart",
+                             self.player_sprite.center_x - 125,
+                             self.player_sprite.center_y - 125, (200, 20, 20),
+                             24)
 
         # Instructions
         if not self.game_started:
@@ -554,9 +561,8 @@ class MyApplication(arcade.Window):
         # If you get a high score write it to scores.txt
         if self.score > self.highscore:
             self.highscore = self.score
-            open("scores.txt").close()  # Delete old score
-            file = open("scores.txt", 'w')
-            file.write(str(self.score))  # Write new score
+            with open(path / "scores.txt", 'w') as f:
+                f.write(str(self.score))  # Write new score
 
             # Play a sound when you get a new high score.
             if not self.highscore_sound:
@@ -625,7 +631,7 @@ class MyApplication(arcade.Window):
                 if arcade.check_for_collision(fireball, self.player_sprite):
                     self.health -= 25
                     char_pain_sounds = [
-                        'char_pain_1', 'char_pain_2', 'chair_pain_3'
+                        'char_pain_1', 'char_pain_2', 'char_pain_3'
                     ]
                     arcade.play_sound(
                         self.sound_mapping[random.choice(char_pain_sounds)]
