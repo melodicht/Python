@@ -260,11 +260,11 @@ class MyApplication(arcade.Window):
                     self.blocks[x][16] = False
                 self.blocks[0][16] = True
                 self.doorpos = 16
-                wall = arcade.Sprite(path / "images/castle_door_open.png")
-                wall.center_x = (BR_X - 1) * 32
-                wall.center_y = 16 * 32
-                self.all_sprites_list.append(wall)
-                self.wall_list.append(wall)
+                self.initialize_wall(
+                    "images/castle_door_open.png",
+                    (BR_X - 1) * 32,
+                    16 * 32
+                )
 
             # Keep trying different directions until it's a valid direction.
             valid_movement = False
@@ -298,11 +298,11 @@ class MyApplication(arcade.Window):
             # Create spawn door
             if self.ng_x >= BR_X - 1:
                 self.doorpos = self.ng_y
-                wall = arcade.Sprite("images/castle_door_open.png", 1)
-                wall.center_x = self.ng_x * 32
-                wall.center_y = self.ng_y * 32
-                self.all_sprites_list.append(wall)
-                self.wall_list.append(wall)
+                self.initialize_wall(
+                    "images/castle_door_open.png",
+                    self.ng_x * 32,
+                    self.ng_y * 32
+                )
                 break
 
         # Create a randomly chosen wall sprite where all the wall blocks
@@ -316,11 +316,9 @@ class MyApplication(arcade.Window):
         for (x, y) in product(range(BR_X), range(BR_Y)):
             if self.blocks[x][y]:
                 # Create walls
-                wall = arcade.Sprite(random.choice(wall_textures))
-                wall.center_x = x * 32
-                wall.center_y = y * 32
-                self.all_sprites_list.append(wall)
-                self.wall_list.append(wall)
+                self.initialize_wall(
+                    random.choice(wall_textures), x * 32, y * 32
+                )
             else:
                 # Spawn random items and enemies
                 # Each room you enter, enemy increases
@@ -363,11 +361,7 @@ class MyApplication(arcade.Window):
             arcade.set_background_color(arcade.color.BLIZZARD_BLUE)
 
         # Create end door
-        wall = arcade.Sprite(path / "images/castle_door_closed.png", 1)
-        wall.center_x = 0
-        wall.center_y = 5 * 32
-        self.all_sprites_list.append(wall)
-        self.wall_list.append(wall)
+        self.initialize_wall("images/castle_door_closed.png", 0, 5 * 32)
 
     def change_direction(self):
         # Randomly change to an adjacent direction.
@@ -385,6 +379,15 @@ class MyApplication(arcade.Window):
                 new_direction = "right"
 
         self.direction = new_direction
+
+    def initialize_wall(self, file_path, center_x, center_y):
+        wall = arcade.Sprite(
+            filename=path / file_path,
+            center_x=center_x,
+            center_y=center_y,
+        )
+        self.all_sprites_list.append(wall)
+        self.wall_list.append(wall)
 
     def on_draw(self):
         arcade.start_render()
