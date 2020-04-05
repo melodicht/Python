@@ -131,7 +131,7 @@ class MyApplication(arcade.Window):
             image_files = f.read().splitlines()
 
             # Initialize player sprite
-            self.player_sprite = arcade.Sprite(image_files[0])
+            self.player_sprite = arcade.Sprite(path / image_files[0])
 
             # Load the rest of the textures
             for image_file in image_files[1:]:
@@ -240,8 +240,9 @@ class MyApplication(arcade.Window):
         with open(path / 'wall_textures.txt', 'r') as f:
             wall_textures = f.read().splitlines()
 
-            for wall_texture in wall_textures:
-                wall_textures.append(path / wall_texture)
+            wall_textures = [
+                (path / wall_texture) for wall_texture in wall_textures
+            ]
 
         for (x, y) in product(range(BR_X), range(BR_Y)):
             if self.blocks[x][y]:
@@ -431,7 +432,7 @@ class MyApplication(arcade.Window):
         elif self.ammo > 0 and self.player_sprite.alive:
             arcade.play_sound(self.sound_mapping['bow_shoot'])
             self.ammo -= 1
-            arrow = Arrow("images/arrow.png", .5)
+            arrow = Arrow(path / "images/arrow.png", .5)
             arrow.center_x = self.player_sprite.center_x
             arrow.center_y = self.player_sprite.center_y
             arrow.speed = 6
@@ -521,26 +522,25 @@ class MyApplication(arcade.Window):
                 self.player_sprite.change_x = 0
 
     def open_chest(self, chest):
-        # If chest isn't already opened, open it and spawn random item.
-        if chest.get_texture() == 0:
+        # If chest isn't already opened, open it and spawn a random item
+        if chest.cur_texture_index == 0:
             arcade.play_sound(self.sound_mapping['chest_open'])
             chest.set_texture(1)
             chance = random.randint(1, 2)
             if chance == 1:
-                ammo = arcade.Sprite("images/arrow_pack.png", 0.75)
+                ammo = arcade.Sprite(path / "images/arrow_pack.png", 0.75)
                 ammo.center_x = chest.center_x
                 ammo.center_y = chest.center_y
                 ammo.force = self.curtime + 10  # I'm using force to store time
                 self.all_sprites_list.append(ammo)
                 self.ammo_list.append(ammo)
             else:
-                potion = arcade.Sprite("images/pt1.png")
+                potion = arcade.Sprite(path / "images/pt1.png")
                 potion.center_x = chest.center_x
                 potion.center_y = chest.center_y
                 potion.force = self.curtime + 10
                 self.all_sprites_list.append(potion)
                 self.potion_list.append(potion)
-
 
     def update(self, delta_time):
         self.curtime += 1
@@ -616,7 +616,7 @@ class MyApplication(arcade.Window):
             # If it hits a chest open the chest and destroy the projectile
             chest_check = arcade.check_for_collision_with_list(fireball, self.chest_list)
             for chest in chest_check:
-                if chest.get_texture() == 0:
+                if chest.cur_texture_index == 0:
                     fireball.kill()
                     self.open_chest(chest)
 
@@ -646,7 +646,7 @@ class MyApplication(arcade.Window):
             # Make arrow stick in wall when it hits it
             wall_check = arcade.check_for_collision_with_list(arrow, self.wall_list)
             for wall in wall_check:
-                ghost_arrow = arcade.Sprite("images/arrow.png", .5)
+                ghost_arrow = arcade.Sprite(path / "images/arrow.png", .5)
                 ghost_arrow.center_x = arrow.center_x
                 ghost_arrow.center_y = arrow.center_y
                 ghost_arrow.angle = arrow.angle
@@ -665,7 +665,7 @@ class MyApplication(arcade.Window):
             # When arrow hits chest open it and remove projectile
             chest_check = arcade.check_for_collision_with_list(arrow, self.chest_list)
             for chest in chest_check:
-                if chest.get_texture() == 0:
+                if chest.cur_texture_index == 0:
                     self.open_chest(chest)
                     arrow.kill()
 
@@ -751,6 +751,7 @@ def main():
     window = MyApplication(SCREEN_WIDTH, SCREEN_HEIGHT)
     window.setup()
     arcade.run()
+
 
 if __name__ == "__main__":
     main()

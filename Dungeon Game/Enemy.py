@@ -3,26 +3,30 @@ import math
 import random
 
 from projectiles import Fireball
+from pathlib import Path
+
+path = Path(__file__).parent
 
 
 class Enemy(arcade.Sprite):
+    curtime = 0
+    delay = 0
+    health = 100
+    death_animation = 0
+
     def _init_(self):
         super().__init__()
         self.player = None
-        self.curtime = 0
-        self.delay = 0
         self.growl = False
         self.fireball_list = None
         self.sound_mapping = None
         self.coin_list = None
-        self.health = 100
-        self.death_animation = 0
 
     def shoot(self):
         if self.player.alive:
             arcade.play_sound(self.sound_mapping['gulp'])
 
-            fireball = Fireball("images/fireball.png")
+            fireball = Fireball(path / "images/fireball.png")
             fireball.center_x = self.center_x
             fireball.center_y = self.center_y
             fireball.reflected = False
@@ -49,7 +53,7 @@ class Enemy(arcade.Sprite):
             self.set_texture(2)
         elif self.death_animation > self.curtime:
             # Spawn a coin on death
-            coin = arcade.Sprite("images/coin.png", 0.1)
+            coin = arcade.Sprite(path / "images/coin.png", 0.1)
             coin.center_x = self.center_x
             coin.center_y = self.center_y
             coin.force = 0
