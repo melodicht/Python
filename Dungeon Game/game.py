@@ -23,12 +23,12 @@ https://freesound.org/people/Christopherderp/sounds/342231/
 https://freesound.org/people/isteak/sounds/387232/
 """
 
-from projectiles import Arrow, Fireball
+from Enemy import Enemy
+from projectiles import Arrow
 
 import random
 import arcade
 import math
-import sys
 from pathlib import Path
 from itertools import product
 
@@ -47,77 +47,6 @@ BR_Y = 48
 VIEWPORT_MARGIN = 200
 
 MOVEMENT_SPEED = 3
-
-
-class Enemy(arcade.Sprite):
-    def _init_(self):
-        super().__init__()
-        self.player = None
-        self.curtime = 0
-        self.delay = 0
-        self.growl = False
-        self.fireball_list = None
-        self.sound_mapping = None
-        self.coin_list = None
-        self.health = 100
-        self.death_animation = 0
-
-    def shoot(self):
-        if self.player.alive:
-            arcade.play_sound(self.sound_mapping['gulp'])
-
-            fireball = Fireball("images/fireball.png")
-            fireball.center_x = self.center_x
-            fireball.center_y = self.center_y
-            fireball.reflected = False
-
-            local_speed = 4
-            x_diff = self.player.center_x - self.center_x
-            y_diff = self.player.center_y - self.center_y
-            angle = math.atan2(y_diff, x_diff)
-            fireball.angle = math.degrees(angle)
-            fireball.change_x = math.cos(angle) * local_speed
-            fireball.change_y = math.sin(angle) * local_speed
-
-            self.fireball_list.append(fireball)
-
-    def update(self):
-        self.curtime += 1
-
-        # If enemy dies play death animation
-        if self.health <= 0 and self.death_animation == 0:
-            self.death_animation = self.curtime + 30
-        if self.death_animation - 20 > self.curtime:
-            self.set_texture(1)
-        elif self.death_animation - 10 > self.curtime:
-            self.set_texture(2)
-        elif self.death_animation > self.curtime:
-            # Spawn a coin on death
-            coin = arcade.Sprite("images/coin.png", 0.1)
-            coin.center_x = self.center_x
-            coin.center_y = self.center_y
-            coin.force = 0
-            self.coin_list.append(coin)
-            self.kill()
-
-
-        # If player is nearby shoot at him every 100-200 frames
-        d = math.sqrt(((self.center_x - self.player.center_x) ** 2) + ((self.center_y - self.player.center_y) ** 2))
-        if d < 150 and self.health > 0:
-            if not self.growl:
-                self.growl = True
-                arcade.play_sound(self.sound_mapping['fireball'])
-
-            x_diff = self.player.center_x - self.center_x
-            y_diff = self.player.center_y - self.center_y
-            self.angle = math.degrees(math.atan2(y_diff, x_diff)) - 90
-
-            if self.curtime > self.delay:
-                self.delay = self.curtime + random.randint(100, 200)
-                self.shoot()
-        else:
-            # Prevent detection noise from playing every frame
-            self.growl = False
 
 
 class MyApplication(arcade.Window):
@@ -292,7 +221,8 @@ class MyApplication(arcade.Window):
             if valid_movement:
                 self.blocks[self.ng_x][self.ng_y] = False
                 if random.randint(0, 3) == 2:
-                    # Every once and while randomly change direction to prevent straight lines from forming.
+                    # Every once and while randomly change direction to prevent
+                    # straight lines from forming.
                     self.change_direction()
 
             # Create spawn door
@@ -329,7 +259,7 @@ class MyApplication(arcade.Window):
                 # Randomly place chests
                 if random.randint(1, 50) == 5:
                     # Spawned slightly smaller than the actual grid
-                    chest = arcade.Sprite("images/chest_closed.png", .75)
+                    chest = arcade.Sprite(path / "images/chest_closed.png", .75)
                     chest.center_x = x * 32
                     chest.center_y = y * 32
                     chest.append_texture(self.chest_texture)
@@ -338,18 +268,13 @@ class MyApplication(arcade.Window):
                 elif random.randint(1, 3 + difficulty) == 2:
                     # Randomly place enemies away from spawn
                     if x > 7:
-                        enemy = Enemy("images/demon.png", .75)
+                        enemy = Enemy(path / "images/demon.png", .75)
                         enemy.center_x = x * 32
                         enemy.center_y = y * 32
                         enemy.player = self.player_sprite
                         enemy.fireball_list = self.fireball_list
                         enemy.sound_mapping = self.sound_mapping
                         enemy.coin_list = self.coin_list
-                        enemy.curtime = 0
-                        enemy.delay = 0
-                        enemy.growl = False
-                        enemy.health = 100
-                        enemy.death_animation = 0
                         enemy.append_texture(self.demon_die_1)
                         enemy.append_texture(self.demon_die_2)
                         enemy.append_texture(self.demon_slash)
