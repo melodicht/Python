@@ -1,6 +1,8 @@
+import math
+from collections import namedtuple
+
 import arcade
 
-from collections import namedtuple
 from assets import path
 from projectiles import Arrow
 
@@ -62,6 +64,18 @@ class Player(arcade.Sprite):
             if not self.is_alive and not self.death_sound:
                 arcade.play_sound(self.sound_mapping['char_die'])
                 self.death_sound = True
+
+    def render_health_bar(self):
+        arcade.draw_rectangle_filled(self.center_x, self.center_y - 16, 24, 4,
+                                     (255, 0, 0))
+        offset_x = math.ceil((24 - (self.health / 4.16)) / 2)
+        arcade.draw_rectangle_filled(
+            self.center_x - offset_x,
+            self.center_y - 16,
+            width=math.ceil(self.health / 4.16),
+            height=4,
+            color=(0, 255, 0)
+        )
 
     def change_movement_with_key(self, key):
         if key == arcade.key.UP or key == arcade.key.W:

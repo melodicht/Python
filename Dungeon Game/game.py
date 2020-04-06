@@ -335,12 +335,13 @@ class MyApplication(arcade.Window):
         arcade.start_render()
 
         # Draw all the sprites.
+        self.player_sprite.draw()
+        self.player_sprite.render_health_bar()
         self.effect_list.draw()
         self.chest_list.draw()
         self.arrow_list.draw()
         self.fireball_list.draw()
         self.wall_list.draw()
-        self.player_sprite.draw()
         self.enemy_list.draw()
         self.potion_list.draw()
         self.coin_list.draw()
@@ -366,18 +367,6 @@ class MyApplication(arcade.Window):
             arrow_text = ''.join(["Arrows:", str(self.player_sprite.ammo)])
             arcade.draw_text(arrow_text, self.view_left + 8,
                              self.view_bottom + 8, arcade.color.WHITE)
-
-            # Draw health bar, red first, then green
-            x = self.player_sprite.center_x
-            y = self.player_sprite.center_y
-            arcade.draw_rectangle_filled(x, y - 16, 24, 4, (255, 0, 0))
-            arcade.draw_rectangle_filled(
-                x - math.ceil((24 - (self.player_sprite.health / 4.16)) / 2),
-                y - 16,
-                width=math.ceil(self.player_sprite.health / 4.16),
-                height=4,
-                color=(0, 255, 0)
-            )
 
         # Death screen
         if not self.player_sprite.is_alive:
