@@ -23,7 +23,7 @@ class Enemy(arcade.Sprite):
         self.coin_list = None
 
     def shoot(self):
-        if self.player.alive:
+        if self.player.is_alive:
             arcade.play_sound(self.sound_mapping['gulp'])
 
             fireball = Fireball(path / "images/fireball.png")

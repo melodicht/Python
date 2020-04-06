@@ -24,11 +24,13 @@ https://freesound.org/people/isteak/sounds/387232/
 """
 
 from Enemy import Enemy
-from projectiles import Arrow
+from Chest import Chest
+from Player import Player
 
 import random
 import arcade
 import math
+from collections import namedtuple
 from pathlib import Path
 from itertools import product
 
@@ -45,8 +47,6 @@ BR_X = 64
 BR_Y = 48
 
 VIEWPORT_MARGIN = 200
-
-MOVEMENT_SPEED = 3
 
 
 class MyApplication(arcade.Window):
@@ -83,17 +83,8 @@ class MyApplication(arcade.Window):
         self.player_sprite = None
         self.wall_list = None
         self.physics_engine = None
-        self.view_bottom = 0
-        self.view_left = 0
-        self.health = 100
-        self.ammo = 5
-        self.knife_delay = 0
-        self.knife_rate = 0
 
         # Map Generation Variables
-        # self.blocks = [
-        #     [True for _ in range(BR_Y)] for _ in range(BR_X)
-        # ]
         self.doorpos = 0
 
         # Textures
@@ -127,23 +118,11 @@ class MyApplication(arcade.Window):
         self.effect_list = arcade.SpriteList()
 
         # Set up the player
-        with open(path / 'player_textures.txt', 'r') as f:
-            image_files = f.read().splitlines()
+        textures_file = 'player_textures.txt'
+        SpawnPoint = namedtuple('SpawnPoint', ['x', 'y'])
+        spawn_point = SpawnPoint(1 * 32, 5 * 32)
+        self.initialize_player(textures_file, spawn_point)
 
-            # Initialize player sprite
-            self.player_sprite = arcade.Sprite(path / image_files[0])
-
-            # Load the rest of the textures
-            for image_file in image_files[1:]:
-                texture = arcade.load_texture(path / image_file)
-                self.player_sprite.append_texture(texture)
-
-        self.player_sprite.center_x = 1 * 32
-        self.player_sprite.center_y = 5 * 32
-        self.player_sprite.eye_pos = "right"
-        self.player_sprite.alive = True
-        self.player_sprite.death_sound = False
-        self.all_sprites_list.append(self.player_sprite)
         self.view_left = 0
         self.view_bottom = 0
 
@@ -169,6 +148,27 @@ class MyApplication(arcade.Window):
         arcade.set_background_color(arcade.color.BLACK)
         self.generate_map()
         arcade.play_sound(self.sound_mapping['default'])
+
+    def initialize_player(self, file_name, spawn_point):
+        with open(path / file_name, 'r') as f:
+            image_files = f.read().splitlines()
+
+            # Initialize player sprite
+            self.player_sprite = Player(
+                path / image_files[0],
+                center_x=spawn_point.x,
+                center_y=spawn_point.y
+            )
+
+            # Load the rest of the textures
+            for image_file in image_files[1:]:
+                texture = arcade.load_texture(path / image_file)
+                self.player_sprite.append_texture(texture)
+
+        self.player_sprite.fireball_list = self.fireball_list
+        self.player_sprite.arrow_list = self.arrow_list
+        self.player_sprite.sound_mapping = self.sound_mapping
+        self.all_sprites_list.append(self.player_sprite)
 
     def generate_map(self):
         self.blocks[1][5] = False
@@ -260,10 +260,17 @@ class MyApplication(arcade.Window):
                 # Randomly place chests
                 if random.randint(1, 50) == 5:
                     # Spawned slightly smaller than the actual grid
-                    chest = arcade.Sprite(path / "images/chest_closed.png", .75)
-                    chest.center_x = x * 32
-                    chest.center_y = y * 32
+                    chest = Chest(
+                        path / "images/chest_closed.png",
+                        center_x=x * 32,
+                        center_y=y * 32,
+                        scale=.75
+                    )
                     chest.append_texture(self.chest_texture)
+                    chest.sound_mapping = self.sound_mapping
+                    chest.ammo_list = self.ammo_list
+                    chest.potion_list = self.potion_list
+                    chest.all_sprites_list = self.all_sprites_list
                     self.all_sprites_list.append(chest)
                     self.chest_list.append(chest)
                 elif random.randint(1, 3 + difficulty) == 2:
@@ -345,26 +352,26 @@ class MyApplication(arcade.Window):
                              self.view_bottom + 365,
                              arcade.color.GREEN, font_size=10)
 
-        if self.player_sprite.alive:
+        if self.player_sprite.is_alive:
             # Render the arrow count text
-            arrow_text = ''.join(["Arrows:", str(self.ammo)])
+            arrow_text = ''.join(["Arrows:", str(self.player_sprite.ammo)])
             arcade.draw_text(arrow_text, self.view_left + 8,
                              self.view_bottom + 8, arcade.color.WHITE)
 
             # Draw health bar, red first, then green
             x = self.player_sprite.center_x
-            y = self.player_sprite.center_y 
+            y = self.player_sprite.center_y
             arcade.draw_rectangle_filled(x, y - 16, 24, 4, (255, 0, 0))
             arcade.draw_rectangle_filled(
-                x - math.ceil((24 - (self.health / 4.16)) / 2),
+                x - math.ceil((24 - (self.player_sprite.health / 4.16)) / 2),
                 y - 16,
-                width=math.ceil(self.health / 4.16),
+                width=math.ceil(self.player_sprite.health / 4.16),
                 height=4,
                 color=(0, 255, 0)
             )
 
         # Death screen
-        if not self.player_sprite.alive:
+        if not self.player_sprite.is_alive:
             arcade.draw_text("You died!", self.player_sprite.center_x - 125,
                              self.player_sprite.center_y, (200, 20, 20), 48)
             arcade.draw_text("Press R To Restart",
@@ -374,97 +381,14 @@ class MyApplication(arcade.Window):
 
         # Instructions
         if not self.game_started:
-            arcade.draw_texture_rectangle(self.player_sprite.center_x, self.player_sprite.center_y, 150, 200, self.controls)
-
-    def stab(self):
-        if self.player_sprite.alive:
-            # Makes it so if you spam the stab button the delay takes longer
-            if self.curtime < self.knife_rate:
-                self.knife_rate += 5
-
-            if self.curtime > self.knife_rate:
-                # Makes it so if you time it right you can stab quickly
-                self.knife_delay = self.curtime + 20
-                self.knife_rate = self.curtime + 20
-                arcade.play_sound(self.sound_mapping['knife_swing'])
-
-                # Determine if something is in front of you
-                box_l = 0
-                box_r = 0
-                box_t = 0
-                box_b = 0
-                range = 36
-                if self.player_sprite.eye_pos == "right":
-                    box_l = self.player_sprite.center_x
-                    box_r = self.player_sprite.center_x + range
-                    box_t = self.player_sprite.center_y + 16
-                    box_b = self.player_sprite.center_y - 16
-                if self.player_sprite.eye_pos == "left":
-                    box_l = self.player_sprite.center_x - range
-                    box_r = self.player_sprite.center_x
-                    box_t = self.player_sprite.center_y + 16
-                    box_b = self.player_sprite.center_y - 16
-                if self.player_sprite.eye_pos == "up":
-                    box_l = self.player_sprite.center_x - 16
-                    box_r = self.player_sprite.center_x + 16
-                    box_t = self.player_sprite.center_y + range
-                    box_b = self.player_sprite.center_y
-                if self.player_sprite.eye_pos == "down":
-                    box_l = self.player_sprite.center_x - 16
-                    box_r = self.player_sprite.center_x + 16
-                    box_t = self.player_sprite.center_y
-                    box_b = self.player_sprite.center_y - range
-
-                # If it's an enemy kill it
-                for enemy in self.enemy_list:
-                    if box_l < enemy.center_x < box_r and box_b < enemy.center_y < box_t:
-                        enemy.health = 0
-                        arcade.play_sound(self.sound_mapping['knife_hit'])
-                        arcade.play_sound(self.sound_mapping['demon_die'])
-
-                # If it's a fireball reflect it
-                for fireball in self.fireball_list:
-                    if box_l < fireball.center_x < box_r and box_b < fireball.center_y < box_t:
-                        fireball.reflected = True
-                        fireball.change_x *= -1
-                        fireball.change_y *= -1
-                        arcade.play_sound(self.sound_mapping['knife_hit'])
-
-    def shoot(self):
-        # If you don't have any ammo stab instead.
-        if self.ammo <= 0 and self.player_sprite.alive:
-            self.stab()
-
-        # If you do have ammo shoot an arrow and remove one ammo.
-        elif self.ammo > 0 and self.player_sprite.alive:
-            arcade.play_sound(self.sound_mapping['bow_shoot'])
-            self.ammo -= 1
-            arrow = Arrow(path / "images/arrow.png", .5)
-            arrow.center_x = self.player_sprite.center_x
-            arrow.center_y = self.player_sprite.center_y
-            arrow.speed = 6
-            if self.player_sprite.eye_pos == "right":
-                arrow.change_x = arrow.speed
-                arrow.change_y = 0
-                arrow.angle = -90
-            elif self.player_sprite.eye_pos == "left":
-                arrow.change_x = -arrow.speed
-                arrow.change_y = 0
-                arrow.angle = 90
-            elif self.player_sprite.eye_pos == "up":
-                arrow.change_x = 0
-                arrow.change_y = arrow.speed
-                arrow.angle = 0
-            elif self.player_sprite.eye_pos == "down":
-                arrow.change_x = 0
-                arrow.change_y = -arrow.speed
-                arrow.angle = 180
-            self.arrow_list.append(arrow)
+            arcade.draw_texture_rectangle(self.player_sprite.center_x,
+                                          self.player_sprite.center_y, 150,
+                                          200, self.controls)
 
     def on_mouse_press(self, x, y, button, modifier):
         # Shoot arrow, start the game if not already started.
         if self.game_started:
-            self.shoot()
+            self.player_sprite.shoot()
         else:
             self.game_started = True
 
@@ -472,43 +396,23 @@ class MyApplication(arcade.Window):
         # If you press R restart the game.
         if key == arcade.key.R:
             self.highscore_sound = False
-            self.score = 0
             self.curtime = 0
+            self.score = 0
             self.room = 0
-            self.health = 100
-            self.ammo = 5
-            self.knife_delay = 0
-            self.knife_rate = 0
             self.setup()
 
         # If you press a button while the game isn't started, start the game.
         self.game_started = True
-        if self.player_sprite.alive:
+        if self.player_sprite.is_alive:
             # Shoot an arrow
             if key == arcade.key.SPACE:
-                self.shoot()
+                self.player_sprite.shoot()
 
             # Stab
             if key == arcade.key.LSHIFT or key == arcade.key.LALT:
-                self.stab()
+                self.player_sprite.stab()
 
-            # Move
-            if key == arcade.key.UP or key == arcade.key.W:
-                self.player_sprite.change_y = MOVEMENT_SPEED
-                self.player_sprite.set_texture(2)
-                self.player_sprite.eye_pos = "up"
-            elif key == arcade.key.DOWN or key == arcade.key.S:
-                self.player_sprite.change_y = -MOVEMENT_SPEED
-                self.player_sprite.set_texture(3)
-                self.player_sprite.eye_pos = "down"
-            elif key == arcade.key.LEFT or key == arcade.key.A:
-                self.player_sprite.change_x = -MOVEMENT_SPEED
-                self.player_sprite.set_texture(1)
-                self.player_sprite.eye_pos = "left"
-            elif key == arcade.key.RIGHT or key == arcade.key.D:
-                self.player_sprite.change_x = MOVEMENT_SPEED
-                self.player_sprite.set_texture(0)
-                self.player_sprite.eye_pos = "right"
+            self.player_sprite.change_movement_with_key(key)
 
     def on_key_release(self, key, modifiers):
         # Helps prevent the player from getting stuck
@@ -528,31 +432,11 @@ class MyApplication(arcade.Window):
             if self.player_sprite.change_x < 0:
                 self.player_sprite.change_x = 0
 
-    def open_chest(self, chest):
-        # If chest isn't already opened, open it and spawn a random item
-        if chest.cur_texture_index == 0:
-            arcade.play_sound(self.sound_mapping['chest_open'])
-            chest.set_texture(1)
-            chance = random.randint(1, 2)
-            if chance == 1:
-                ammo = arcade.Sprite(path / "images/arrow_pack.png", 0.75)
-                ammo.center_x = chest.center_x
-                ammo.center_y = chest.center_y
-                ammo.force = self.curtime + 10  # I'm using force to store time
-                self.all_sprites_list.append(ammo)
-                self.ammo_list.append(ammo)
-            else:
-                potion = arcade.Sprite(path / "images/pt1.png")
-                potion.center_x = chest.center_x
-                potion.center_y = chest.center_y
-                potion.force = self.curtime + 10
-                self.all_sprites_list.append(potion)
-                self.potion_list.append(potion)
-
     def update(self, delta_time):
         self.curtime += 1
 
         if self.game_started:
+            self.player_sprite.update()
             self.arrow_list.update()
             self.enemy_list.update()
             self.fireball_list.update()
@@ -569,67 +453,27 @@ class MyApplication(arcade.Window):
                 self.highscore_sound = True
                 arcade.play_sound(self.sound_mapping['highscore'])
 
-        # Stab animation
-        if self.knife_delay != 0:
-            if self.knife_delay - 10 > self.curtime:
-                if self.player_sprite.eye_pos == "up":
-                    self.player_sprite.set_texture(5)
-                if self.player_sprite.eye_pos == "right":
-                    self.player_sprite.set_texture(6)
-                if self.player_sprite.eye_pos == "left":
-                    self.player_sprite.set_texture(7)
-                if self.player_sprite.eye_pos == "down":
-                    self.player_sprite.set_texture(8)
-            else:
-                if self.player_sprite.eye_pos == "up":
-                    self.player_sprite.set_texture(2)
-                if self.player_sprite.eye_pos == "right":
-                    self.player_sprite.set_texture(0)
-                if self.player_sprite.eye_pos == "left":
-                    self.player_sprite.set_texture(1)
-                if self.player_sprite.eye_pos == "down":
-                    self.player_sprite.set_texture(3)
-
-        # Makes player slide on death
-        if self.health <= 0:
-            self.player_sprite.set_texture(4)
-            self.player_sprite.alive = False
-            if self.player_sprite.change_x > 0:
-                self.player_sprite.change_x -= .1
-            if self.player_sprite.change_x < 0:
-                self.player_sprite.change_x += .1
-            if -.2 < float(self.player_sprite.change_x) < .2:
-                self.player_sprite.change_x = 0
-            if self.player_sprite.change_y > 0:
-                self.player_sprite.change_y -= .1
-            if self.player_sprite.change_y < 0:
-                self.player_sprite.change_y += .1
-            if -.2 < float(self.player_sprite.change_y) < .2:
-                self.player_sprite.change_y = 0
-
-        # Play sound on death
-        if not self.player_sprite.alive and not self.player_sprite.death_sound:
-            arcade.play_sound(self.sound_mapping['char_die'])
-            self.player_sprite.death_sound = True
-
         # When fireball collides with stuff
         for fireball in self.fireball_list:
             # If it hits a wall make it disappear.
-            wall_check = arcade.check_for_collision_with_list(fireball, self.wall_list)
+            wall_check = arcade.check_for_collision_with_list(
+                fireball, self.wall_list
+            )
             for wall in wall_check:
                 fireball.kill()
 
             # If it hits a chest open the chest and destroy the projectile
-            chest_check = arcade.check_for_collision_with_list(fireball, self.chest_list)
+            chest_check = arcade.check_for_collision_with_list(
+                fireball, self.chest_list
+            )
             for chest in chest_check:
-                if chest.cur_texture_index == 0:
-                    fireball.kill()
-                    self.open_chest(chest)
+                fireball.kill()
+                chest.open(self.curtime)
 
             # If it hits the player hurt them
             if not fireball.reflected:
                 if arcade.check_for_collision(fireball, self.player_sprite):
-                    self.health -= 25
+                    self.player_sprite.health -= 25
                     char_pain_sounds = [
                         'char_pain_1', 'char_pain_2', 'char_pain_3'
                     ]
@@ -669,24 +513,27 @@ class MyApplication(arcade.Window):
                     arcade.play_sound(self.sound_mapping['demon_die'])
 
             # When arrow hits chest open it and remove projectile
-            chest_check = arcade.check_for_collision_with_list(arrow, self.chest_list)
+            chest_check = arcade.check_for_collision_with_list(
+                arrow, self.chest_list
+            )
             for chest in chest_check:
-                if chest.cur_texture_index == 0:
-                    self.open_chest(chest)
-                    arrow.kill()
+                chest.open(self.curtime)
+                arrow.kill()
 
         # If the player runs into an enemy kill the player
         for enemy in self.enemy_list:
             enemy_check = arcade.check_for_collision_with_list(self.player_sprite, self.enemy_list)
             for enemy in enemy_check:
                 if enemy.health > 0:
-                    self.health = 0
+                    self.player_sprite.health = 0
                     enemy.set_texture(3)
 
         # If player runs into a chest open the chest
-        chest_list = arcade.check_for_collision_with_list(self.player_sprite, self.chest_list)
-        for item in chest_list:
-            self.open_chest(item)
+        chest_list = arcade.check_for_collision_with_list(
+            self.player_sprite, self.chest_list
+        )
+        for chest in chest_list:
+            chest.open(self.curtime)
 
         # If player runs into the ammo pickup give arrows and remove it
         ammo_list = arcade.check_for_collision_with_list(self.player_sprite, self.ammo_list)
@@ -694,7 +541,7 @@ class MyApplication(arcade.Window):
             if self.curtime > item.force:
                 arcade.play_sound(self.sound_mapping['pickup_coin'])
                 item.kill()
-                self.ammo += 3
+                self.player_sprite.ammo += 3
 
         # If player runs into the coin pick it up
         coin_list = arcade.check_for_collision_with_list(self.player_sprite, self.coin_list)
@@ -710,10 +557,10 @@ class MyApplication(arcade.Window):
             if self.curtime > item.force:
                 arcade.play_sound(self.sound_mapping['gulp'])
                 item.kill()
-                if self.health <= 90:
-                    self.health += 10
+                if self.player_sprite.health <= 90:
+                    self.player_sprite.health += 10
                 else:
-                    self.health += (100 - self.health)
+                    self.player_sprite.health += (100 - self.player_sprite.health)
 
         # If you walk into the end door go into a new dungeon
         y = self.doorpos * 32
