@@ -214,6 +214,15 @@ class MyApplication(arcade.Window):
         self.all_sprites_list.append(chest)
         self.chest_list.append(chest)
 
+    def initialize_wall(self, file_path, x, y):
+        wall = arcade.Sprite(
+            filename=path / file_path,
+            center_x=x * 32,
+            center_y=y * 32,
+        )
+        self.all_sprites_list.append(wall)
+        self.wall_list.append(wall)
+
     def generate_path(self):
         self.ng_x = 1
         self.ng_y = 5
@@ -321,15 +330,6 @@ class MyApplication(arcade.Window):
                 new_direction = "right"
 
         self.direction = new_direction
-
-    def initialize_wall(self, file_path, x, y):
-        wall = arcade.Sprite(
-            filename=path / file_path,
-            center_x=x * 32,
-            center_y=y * 32,
-        )
-        self.all_sprites_list.append(wall)
-        self.wall_list.append(wall)
 
     def on_draw(self):
         arcade.start_render()
