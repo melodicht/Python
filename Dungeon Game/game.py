@@ -68,25 +68,6 @@ class MyApplication(arcade.Window):
         self.score = 0
         self.room = 0
 
-        # Sprite lists
-        self.all_sprites_list = None
-        self.coin_list = None
-        self.ammo_list = None
-        self.arrow_list = None
-        self.enemy_list = None
-        self.fireball_list = None
-        self.chest_list = None
-        self.potion_list = None
-        self.effect_list = None
-
-        # Set up the player
-        self.player_sprite = None
-        self.wall_list = None
-        self.physics_engine = None
-
-        # Map Generation Variables
-        self.doorpos = 0
-
         # Textures
         image_file = path / "images/chest_opened.png"
         self.chest_texture = arcade.load_texture(image_file)
@@ -96,6 +77,9 @@ class MyApplication(arcade.Window):
 
         # Sounds
         self.sound_mapping = {}
+        self.initialise_sound_map()
+
+    def initialise_sound_map(self):
         with open(path / 'sounds.txt', 'r') as f:
             sound_files = f.read().splitlines()
 
@@ -137,6 +121,7 @@ class MyApplication(arcade.Window):
         self.score_text = None
 
         # Map Generation
+        self.doorpos = 0
         self.blocks = [[True for _ in range(BR_Y)] for _ in range(BR_X)]
         self.direction = "right"
         self.ng_x = 0
