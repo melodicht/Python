@@ -1,10 +1,7 @@
 import arcade
 import random
 
-from pathlib import Path
-
-
-path = Path(__file__).parent
+from assets import path
 
 
 class Chest(arcade.Sprite):

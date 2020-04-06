@@ -1,13 +1,12 @@
 import arcade
 
 from collections import namedtuple
+from assets import path
 from projectiles import Arrow
-from pathlib import Path
 
 
 # Left, right, top, bottom
 Box = namedtuple('Box', ['l', 'r', 't', 'b'])
-path = Path(__file__).parent
 
 
 class Player(arcade.Sprite):

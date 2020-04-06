@@ -31,11 +31,9 @@ import random
 import arcade
 import math
 from collections import namedtuple
-from pathlib import Path
 from itertools import product
+from assets import path
 
-
-path = Path(__file__).parent
 
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
@@ -47,6 +45,45 @@ BR_X = 64
 BR_Y = 48
 
 VIEWPORT_MARGIN = 200
+
+SpawnPoint = namedtuple('SpawnPoint', ['x', 'y'])
+
+
+def get_sound_map():
+    sound_mapping = {}
+    with open(path / 'sounds.txt', 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            key = line.split('sounds/')[1].rstrip('.ogg')
+            sound_mapping[key] = arcade.load_sound(str(path / line))
+
+    return sound_mapping
+
+
+def get_wall_texture_files():
+    """Returns a list."""
+    wall_texture_files = []
+    with open(path / 'wall_textures.txt', 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+
+            wall_texture_files.append(path / line)
+
+    return wall_texture_files
+
+
+def get_player_texture_files():
+    """Yields with a generator."""
+    with open(path / 'player_textures.txt', 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            yield (path / line)
 
 
 class MyApplication(arcade.Window):
@@ -75,18 +112,11 @@ class MyApplication(arcade.Window):
         image_file = path / "images/controls.png"
         self.controls = arcade.load_texture(image_file)
 
+        self.castle_door_opened = "images/castle_door_open.png"
+        self.castle_door_closed = "images/castle_door_closed.png"
+
         # Sounds
-        self.sound_mapping = {}
-        self.initialise_sound_map()
-
-    def initialise_sound_map(self):
-        with open(path / 'sounds.txt', 'r') as f:
-            sound_files = f.read().splitlines()
-
-            for sound_file in sound_files:
-                key = sound_file.split('sounds/')[1].rstrip('.ogg')
-                sound_object = arcade.load_sound(str(path / sound_file))
-                self.sound_mapping[key] = sound_object
+        self.sound_mapping = get_sound_map()
 
     def setup(self):
         # Sprite lists
@@ -102,10 +132,8 @@ class MyApplication(arcade.Window):
         self.effect_list = arcade.SpriteList()
 
         # Set up the player
-        textures_file = 'player_textures.txt'
-        SpawnPoint = namedtuple('SpawnPoint', ['x', 'y'])
         spawn_point = SpawnPoint(1 * 32, 5 * 32)
-        self.initialize_player(textures_file, spawn_point)
+        self.initialize_player(spawn_point)
 
         self.view_left = 0
         self.view_bottom = 0
@@ -134,33 +162,61 @@ class MyApplication(arcade.Window):
         self.generate_map()
         arcade.play_sound(self.sound_mapping['default'])
 
-    def initialize_player(self, file_name, spawn_point):
-        with open(path / file_name, 'r') as f:
-            image_files = f.read().splitlines()
+    def initialize_player(self, spawn_point):
+        player_texture_files = get_player_texture_files()
 
-            # Initialize player sprite
-            self.player_sprite = Player(
-                path / image_files[0],
-                center_x=spawn_point.x,
-                center_y=spawn_point.y
-            )
+        # Initialize player sprite
+        self.player_sprite = Player(
+            next(player_texture_files),
+            center_x=spawn_point.x,
+            center_y=spawn_point.y
+        )
 
-            # Load the rest of the textures
-            for image_file in image_files[1:]:
-                texture = arcade.load_texture(path / image_file)
-                self.player_sprite.append_texture(texture)
+        # Load the rest of the textures
+        for player_texture_file in player_texture_files:
+            texture = arcade.load_texture(player_texture_file)
+            self.player_sprite.append_texture(texture)
 
         self.player_sprite.fireball_list = self.fireball_list
         self.player_sprite.arrow_list = self.arrow_list
         self.player_sprite.sound_mapping = self.sound_mapping
         self.all_sprites_list.append(self.player_sprite)
 
-    def generate_map(self):
-        self.blocks[1][5] = False
+    def initialize_enemy(self, x, y):
+        enemy = Enemy(
+            path / "images/demon.png",
+            center_x=x * 32,
+            center_y=y * 32,
+            scale=.75
+        )
+        enemy.player = self.player_sprite
+        enemy.fireball_list = self.fireball_list
+        enemy.sound_mapping = self.sound_mapping
+        enemy.coin_list = self.coin_list
+        enemy.append_texture(self.demon_die_1)
+        enemy.append_texture(self.demon_die_2)
+        enemy.append_texture(self.demon_slash)
+        self.all_sprites_list.append(enemy)
+        self.enemy_list.append(enemy)
 
+    def initialize_chest(self, x, y):
+        chest = Chest(
+            path / "images/chest_closed.png",
+            center_x=x * 32,
+            center_y=y * 32,
+            scale=.75
+        )
+        chest.append_texture(self.chest_texture)
+        chest.sound_mapping = self.sound_mapping
+        chest.ammo_list = self.ammo_list
+        chest.potion_list = self.potion_list
+        chest.all_sprites_list = self.all_sprites_list
+        self.all_sprites_list.append(chest)
+        self.chest_list.append(chest)
+
+    def generate_path(self):
         self.ng_x = 1
         self.ng_y = 5
-        self.direction = "right"
         anti_crash = 0
 
         # The map is generated by having a "snake" go around the map in random
@@ -175,9 +231,9 @@ class MyApplication(arcade.Window):
                 self.blocks[0][16] = True
                 self.doorpos = 16
                 self.initialize_wall(
-                    "images/castle_door_open.png",
-                    (BR_X - 1) * 32,
-                    16 * 32
+                    self.castle_door_opened,
+                    (BR_X - 1),
+                    16
                 )
 
             # Keep trying different directions until it's a valid direction.
@@ -205,81 +261,49 @@ class MyApplication(arcade.Window):
             # If it's a valid movement set it to a floor block.
             if valid_movement:
                 self.blocks[self.ng_x][self.ng_y] = False
-                if random.randint(0, 3) == 2:
-                    # Every once and while randomly change direction to prevent
-                    # straight lines from forming.
+                if random.randint(1, 4) == 1:
+                    # Prevent straight lines from forming.
                     self.change_direction()
 
-            # Create spawn door
+            # Create spawn door at the right most edge
             if self.ng_x >= BR_X - 1:
                 self.doorpos = self.ng_y
                 self.initialize_wall(
-                    "images/castle_door_open.png",
-                    self.ng_x * 32,
-                    self.ng_y * 32
+                    self.castle_door_opened,
+                    self.ng_x,
+                    self.ng_y
                 )
                 break
 
+    def generate_map(self):
+        self.blocks[1][5] = False
+        self.generate_path()
+
+        self.direction = "right"
+
         # Create a randomly chosen wall sprite where all the wall blocks
         # should  be.
-        with open(path / 'wall_textures.txt', 'r') as f:
-            wall_textures = f.read().splitlines()
-
-            wall_textures = [
-                (path / wall_texture) for wall_texture in wall_textures
-            ]
+        wall_textures = get_wall_texture_files()
 
         for (x, y) in product(range(BR_X), range(BR_Y)):
             if self.blocks[x][y]:
                 # Create walls
                 self.initialize_wall(
-                    random.choice(wall_textures), x * 32, y * 32
+                    random.choice(wall_textures), x, y
                 )
             else:
-                # Spawn random items and enemies
                 # Each room you enter, enemy increases
-                difficulty = 17 - self.room
-                if difficulty <= 0:
-                    difficulty = 0
+                difficulty = max(0, 17 - self.room) + 3
+                spawn_enemy = random.randint(1, difficulty) == 1
 
                 # Randomly place chests
-                if random.randint(1, 50) == 5:
-                    # Spawned slightly smaller than the actual grid
-                    chest = Chest(
-                        path / "images/chest_closed.png",
-                        center_x=x * 32,
-                        center_y=y * 32,
-                        scale=.75
-                    )
-                    chest.append_texture(self.chest_texture)
-                    chest.sound_mapping = self.sound_mapping
-                    chest.ammo_list = self.ammo_list
-                    chest.potion_list = self.potion_list
-                    chest.all_sprites_list = self.all_sprites_list
-                    self.all_sprites_list.append(chest)
-                    self.chest_list.append(chest)
-                elif random.randint(1, 3 + difficulty) == 2:
-                    # Randomly place enemies away from spawn
-                    if x > 7:
-                        enemy = Enemy(path / "images/demon.png", .75)
-                        enemy.center_x = x * 32
-                        enemy.center_y = y * 32
-                        enemy.player = self.player_sprite
-                        enemy.fireball_list = self.fireball_list
-                        enemy.sound_mapping = self.sound_mapping
-                        enemy.coin_list = self.coin_list
-                        enemy.append_texture(self.demon_die_1)
-                        enemy.append_texture(self.demon_die_2)
-                        enemy.append_texture(self.demon_slash)
-                        self.all_sprites_list.append(enemy)
-                        self.enemy_list.append(enemy)
-
-        # Just a random easter egg
-        if anti_crash == 777:
-            arcade.set_background_color(arcade.color.BLIZZARD_BLUE)
+                if random.randint(1, 50) == 1:
+                    self.initialize_chest(x, y)
+                elif spawn_enemy and x > 7:  # Away from spawn
+                    self.initialize_enemy(x, y)
 
         # Create end door
-        self.initialize_wall("images/castle_door_closed.png", 0, 5 * 32)
+        self.initialize_wall(self.castle_door_closed, 0, 5)
 
     def change_direction(self):
         # Randomly change to an adjacent direction.
@@ -298,11 +322,11 @@ class MyApplication(arcade.Window):
 
         self.direction = new_direction
 
-    def initialize_wall(self, file_path, center_x, center_y):
+    def initialize_wall(self, file_path, x, y):
         wall = arcade.Sprite(
             filename=path / file_path,
-            center_x=center_x,
-            center_y=center_y,
+            center_x=x * 32,
+            center_y=y * 32,
         )
         self.all_sprites_list.append(wall)
         self.wall_list.append(wall)

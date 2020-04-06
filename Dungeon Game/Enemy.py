@@ -3,9 +3,7 @@ import math
 import random
 
 from projectiles import Fireball
-from pathlib import Path
-
-path = Path(__file__).parent
+from assets import path
 
 
 class Enemy(arcade.Sprite):
@@ -14,8 +12,9 @@ class Enemy(arcade.Sprite):
     health = 100
     death_animation = 0
 
-    def _init_(self):
-        super().__init__()
+    def _init_(self, file_name, center_x, center_y, scale):
+        super().__init__(file_name, center_x=center_x, center_y=center_y,
+                         scale=scale)
         self.player = None
         self.growl = False
         self.fireball_list = None
