@@ -478,13 +478,17 @@ class MyApplication(arcade.Window):
                 if arcade.check_for_collision(fireball, self.player_sprite):
                     self.player_sprite.health -= 25
                     arcade.play_sound(
-                        self.sound_mapping[random.choice(self.char_pain_sounds)]
+                        self.sound_mapping[
+                            random.choice(self.char_pain_sounds)
+                        ]
                     )
                     fireball.kill()
 
             # If the player reflects the fireball have it hurt other enemies
             if fireball.reflected:
-                enemy_check = arcade.check_for_collision_with_list(fireball, self.enemy_list)
+                enemy_check = arcade.check_for_collision_with_list(
+                    fireball, self.enemy_list
+                )
                 for enemy in enemy_check:
                     if enemy.health > 0:
                         fireball.kill()
@@ -494,7 +498,9 @@ class MyApplication(arcade.Window):
         # When arrow collides with stuff
         for arrow in self.arrow_list:
             # Make arrow stick in wall when it hits it
-            wall_check = arcade.check_for_collision_with_list(arrow, self.wall_list)
+            wall_check = arcade.check_for_collision_with_list(
+                arrow, self.wall_list
+            )
             for wall in wall_check:
                 ghost_arrow = arcade.Sprite(path / "images/arrow.png", .5)
                 ghost_arrow.center_x = arrow.center_x
@@ -505,7 +511,9 @@ class MyApplication(arcade.Window):
                 arcade.play_sound(self.sound_mapping['arrow_hit'])
 
             # When arrow hits enemy kill them and remove projectile
-            enemy_check = arcade.check_for_collision_with_list(arrow, self.enemy_list)
+            enemy_check = arcade.check_for_collision_with_list(
+                arrow, self.enemy_list
+            )
             for enemy in enemy_check:
                 if enemy.health > 0:
                     arrow.kill()
@@ -522,7 +530,9 @@ class MyApplication(arcade.Window):
 
         # If the player runs into an enemy kill the player
         for enemy in self.enemy_list:
-            enemy_check = arcade.check_for_collision_with_list(self.player_sprite, self.enemy_list)
+            enemy_check = arcade.check_for_collision_with_list(
+                self.player_sprite, self.enemy_list
+            )
             for enemy in enemy_check:
                 if enemy.health > 0:
                     self.player_sprite.health = 0
@@ -536,7 +546,9 @@ class MyApplication(arcade.Window):
             chest.open(self.curtime)
 
         # If player runs into the ammo pickup give arrows and remove it
-        ammo_list = arcade.check_for_collision_with_list(self.player_sprite, self.ammo_list)
+        ammo_list = arcade.check_for_collision_with_list(
+            self.player_sprite, self.ammo_list
+        )
         for item in ammo_list:
             if self.curtime > item.force:
                 arcade.play_sound(self.sound_mapping['pickup_coin'])
@@ -544,7 +556,9 @@ class MyApplication(arcade.Window):
                 self.player_sprite.ammo += 3
 
         # If player runs into the coin pick it up
-        coin_list = arcade.check_for_collision_with_list(self.player_sprite, self.coin_list)
+        coin_list = arcade.check_for_collision_with_list(
+            self.player_sprite, self.coin_list
+        )
         for item in coin_list:
             if self.curtime > item.force:
                 arcade.play_sound(self.sound_mapping['coin_pickup'])
@@ -552,7 +566,9 @@ class MyApplication(arcade.Window):
                 self.score += 1
 
         # If player runs into the potion pickup heal player and remove it
-        potion_list = arcade.check_for_collision_with_list(self.player_sprite, self.potion_list)
+        potion_list = arcade.check_for_collision_with_list(
+            self.player_sprite, self.potion_list
+        )
         for item in potion_list:
             if self.curtime > item.force:
                 arcade.play_sound(self.sound_mapping['gulp'])
@@ -560,13 +576,16 @@ class MyApplication(arcade.Window):
                 if self.player_sprite.health <= 90:
                     self.player_sprite.health += 10
                 else:
-                    self.player_sprite.health += (100 - self.player_sprite.health)
+                    self.player_sprite.health += (100 -
+                                                  self.player_sprite.health)
 
         # If you walk into the end door go into a new dungeon
         y = self.doorpos * 32
-        if (y - 16) < self.player_sprite.center_y < (y + 16) and self.player_sprite.center_x > ((BR_X - 2) * 32):
+        if ((y - 16) < self.player_sprite.center_y < (y + 16) and
+                self.player_sprite.center_x > ((BR_X - 2) * 32)):
             self.room += 1
-            self.score = int(self.score * (1 + (self.room / 10)))  # Give a bonus for beating a dungeon.
+            # Give a bonus for beating a dungeon.
+            self.score = int(self.score * (1 + (self.room / 10)))
             self.setup()
 
         # Track if we need to change the viewport
@@ -597,7 +616,9 @@ class MyApplication(arcade.Window):
             changed = True
 
         if changed:
-            arcade.set_viewport(self.view_left, SCROLL_WIDTH + self.view_left, self.view_bottom, SCROLL_HEIGHT + self.view_bottom)
+            arcade.set_viewport(self.view_left, SCROLL_WIDTH + self.view_left,
+                                self.view_bottom, SCROLL_HEIGHT +
+                                self.view_bottom)
 
 
 def main():
