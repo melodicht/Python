@@ -109,7 +109,7 @@ class MyApplication(arcade.Window):
         image_file = path / "images/chest_opened.png"
         self.chest_texture = arcade.load_texture(image_file)
 
-        self.chest_closed_texture = path / "images/chest_closed.png"
+        self.chest_closed_texture_file = path / "images/chest_closed.png"
 
         image_file = path / "images/controls.png"
         self.controls = arcade.load_texture(image_file)
@@ -117,7 +117,7 @@ class MyApplication(arcade.Window):
         self.castle_door_opened_file = "images/castle_door_open.png"
         self.castle_door_closed_file = "images/castle_door_closed.png"
 
-        self.demon_texture = path / "images/demon.png"
+        self.demon_texture_file = path / "images/demon.png"
 
         # Sounds
         self.sound_mapping = get_sound_map()
@@ -189,7 +189,7 @@ class MyApplication(arcade.Window):
 
     def initialize_enemy(self, x, y):
         enemy = Enemy(
-            self.demon_texture,
+            self.demon_texture_file,
             center_x=x * 32,
             center_y=y * 32,
             scale=.75
@@ -206,7 +206,7 @@ class MyApplication(arcade.Window):
 
     def initialize_chest(self, x, y):
         chest = Chest(
-            self.chest_closed_texture,
+            self.chest_closed_texture_file,
             center_x=x * 32,
             center_y=y * 32,
             scale=.75
