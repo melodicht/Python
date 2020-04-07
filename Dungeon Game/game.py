@@ -23,16 +23,16 @@ https://freesound.org/people/Christopherderp/sounds/342231/
 https://freesound.org/people/isteak/sounds/387232/
 """
 
-from Enemy import Enemy
-from Chest import Chest
-from Player import Player
-
 import random
-import arcade
-import math
 from collections import namedtuple
 from itertools import product
+
+import arcade
+
 from assets import path
+from Chest import Chest
+from Enemy import Enemy
+from Player import Player
 
 
 SCREEN_WIDTH = 1024
@@ -105,18 +105,23 @@ class MyApplication(arcade.Window):
         self.score = 0
         self.room = 0
 
-        # Textures
+        # Textures and files
         image_file = path / "images/chest_opened.png"
         self.chest_texture = arcade.load_texture(image_file)
+
+        self.chest_closed_texture = path / "images/chest_closed.png"
 
         image_file = path / "images/controls.png"
         self.controls = arcade.load_texture(image_file)
 
-        self.castle_door_opened = "images/castle_door_open.png"
-        self.castle_door_closed = "images/castle_door_closed.png"
+        self.castle_door_opened_file = "images/castle_door_open.png"
+        self.castle_door_closed_file = "images/castle_door_closed.png"
+
+        self.demon_texture = path / "images/demon.png"
 
         # Sounds
         self.sound_mapping = get_sound_map()
+        self.char_pain_sounds = ['char_pain_1', 'char_pain_2', 'char_pain_3']
 
     def setup(self):
         # Sprite lists
@@ -184,7 +189,7 @@ class MyApplication(arcade.Window):
 
     def initialize_enemy(self, x, y):
         enemy = Enemy(
-            path / "images/demon.png",
+            self.demon_texture,
             center_x=x * 32,
             center_y=y * 32,
             scale=.75
@@ -201,7 +206,7 @@ class MyApplication(arcade.Window):
 
     def initialize_chest(self, x, y):
         chest = Chest(
-            path / "images/chest_closed.png",
+            self.chest_closed_texture,
             center_x=x * 32,
             center_y=y * 32,
             scale=.75
@@ -240,7 +245,7 @@ class MyApplication(arcade.Window):
                 self.blocks[0][16] = True
                 self.doorpos = 16
                 self.initialize_wall(
-                    self.castle_door_opened,
+                    self.castle_door_opened_file,
                     (BR_X - 1),
                     16
                 )
@@ -278,7 +283,7 @@ class MyApplication(arcade.Window):
             if self.ng_x >= BR_X - 1:
                 self.doorpos = self.ng_y
                 self.initialize_wall(
-                    self.castle_door_opened,
+                    self.castle_door_opened_file,
                     self.ng_x,
                     self.ng_y
                 )
@@ -312,7 +317,7 @@ class MyApplication(arcade.Window):
                     self.initialize_enemy(x, y)
 
         # Create end door
-        self.initialize_wall(self.castle_door_closed, 0, 5)
+        self.initialize_wall(self.castle_door_closed_file, 0, 5)
 
     def change_direction(self):
         # Randomly change to an adjacent direction.
@@ -472,11 +477,8 @@ class MyApplication(arcade.Window):
             if not fireball.reflected:
                 if arcade.check_for_collision(fireball, self.player_sprite):
                     self.player_sprite.health -= 25
-                    char_pain_sounds = [
-                        'char_pain_1', 'char_pain_2', 'char_pain_3'
-                    ]
                     arcade.play_sound(
-                        self.sound_mapping[random.choice(char_pain_sounds)]
+                        self.sound_mapping[random.choice(self.char_pain_sounds)]
                     )
                     fireball.kill()
 
