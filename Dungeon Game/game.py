@@ -104,6 +104,7 @@ class MyApplication(arcade.Window):
         self.curtime = 0
         self.score = 0
         self.room = 0
+        self.player_ammo = 5
 
         # Textures and files
         image_file = path / "images/chest_opened.png"
@@ -174,7 +175,8 @@ class MyApplication(arcade.Window):
         self.player_sprite = Player(
             next(player_texture_files),
             center_x=spawn_point.x,
-            center_y=spawn_point.y
+            center_y=spawn_point.y,
+            ammo=self.player_ammo
         )
 
         # Load the rest of the textures
@@ -574,6 +576,7 @@ class MyApplication(arcade.Window):
         if ((y - 16) < self.player_sprite.center_y < (y + 16) and
                 self.player_sprite.center_x > ((BR_X - 2) * 32)):
             self.room += 1
+            self.player_ammo = self.player_sprite.ammo
             # Give a bonus for beating a dungeon.
             self.score = int(self.score * (1 + (self.room / 10)))
             self.setup()

@@ -18,7 +18,6 @@ class Player(arcade.Sprite):
 
     health = 100
     movement_speed = 3
-    ammo = 5
     curtime = 0
     knife_delay = 0
     knife_rate = 0
@@ -28,8 +27,9 @@ class Player(arcade.Sprite):
     fireball_list = None
     sound_mapping = None
 
-    def __init__(self, file_name, center_x, center_y):
+    def __init__(self, file_name, center_x, center_y, ammo):
         super().__init__(file_name, center_x=center_x, center_y=center_y)
+        self.ammo = ammo
 
     def update(self):
         self.curtime += 1
