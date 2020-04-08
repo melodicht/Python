@@ -49,41 +49,30 @@ VIEWPORT_MARGIN = 200
 SpawnPoint = namedtuple('SpawnPoint', ['x', 'y'])
 
 
-def get_sound_map():
-    sound_mapping = {}
-    with open(path / 'sounds.txt', 'r') as f:
+def get_file_paths(file_name):
+    """Yields a file path from a file."""
+    with open(path / file_name, 'r') as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith('#'):
                 continue
-            key = line.split('sounds/')[1].rstrip('.ogg')
-            sound_mapping[key] = arcade.load_sound(str(path / line))
 
+            yield (path / line)
+
+
+def get_sound_map():
+    sound_mapping = {}
+    for file_path in get_file_paths('sounds.txt'):
+        file_path = str(file_path)
+        key = file_path.split('sounds/')[1].split('.ogg')[0]
+        sound_mapping[key] = arcade.load_sound(file_path)
     return sound_mapping
 
 
 def get_wall_texture_files():
     """Returns a list."""
-    wall_texture_files = []
-    with open(path / 'wall_textures.txt', 'r') as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-
-            wall_texture_files.append(path / line)
-
+    wall_texture_files = [f for f in get_file_paths('wall_textures.txt')]
     return wall_texture_files
-
-
-def get_player_texture_files():
-    """Yields with a generator."""
-    with open(path / 'player_textures.txt', 'r') as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            yield (path / line)
 
 
 class MyApplication(arcade.Window):
@@ -169,7 +158,7 @@ class MyApplication(arcade.Window):
         arcade.play_sound(self.sound_mapping['default'])
 
     def initialize_player(self, spawn_point):
-        player_texture_files = get_player_texture_files()
+        player_texture_files = get_file_paths('player_textures.txt')
 
         # Initialize player sprite
         self.player_sprite = Player(
