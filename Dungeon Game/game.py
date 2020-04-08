@@ -330,10 +330,10 @@ class MyApplication(arcade.Window):
         arcade.start_render()
 
         # Draw all the sprites.
+        self.chest_list.draw()
         self.player_sprite.draw()
         self.player_sprite.render_health_bar()
         self.effect_list.draw()
-        self.chest_list.draw()
         self.arrow_list.draw()
         self.fireball_list.draw()
         self.wall_list.draw()
