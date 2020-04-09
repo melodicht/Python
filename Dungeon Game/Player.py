@@ -95,6 +95,23 @@ class Player(arcade.Sprite):
             self.set_texture(0)
             self.eye_pos = "right"
 
+    def stop_movement_with_key(self, key):
+        if key == arcade.key.UP or key == arcade.key.W:
+            if self.change_y > 0:
+                self.change_y = 0
+
+        if key == arcade.key.DOWN or key == arcade.key.S:
+            if self.change_y < 0:
+                self.change_y = 0
+
+        if key == arcade.key.RIGHT or key == arcade.key.D:
+            if self.change_x > 0:
+                self.change_x = 0
+
+        if key == arcade.key.LEFT or key == arcade.key.A:
+            if self.change_x < 0:
+                self.change_x = 0
+
     def stab(self):
         # Makes it so if you spam the stab button the delay takes longer
         if self.curtime < self.knife_rate:
@@ -107,23 +124,23 @@ class Player(arcade.Sprite):
             arcade.play_sound(self.sound_mapping['knife_swing'])
 
             # Determine if something is in front of you
-            range = 36
+            range = 72 * 5
             if self.eye_pos == "right":
                 self.box.l = self.center_x
                 self.box.r = self.center_x + range
                 self.box.t = self.center_y + 16
                 self.box.b = self.center_y - 16
-            if self.eye_pos == "left":
+            elif self.eye_pos == "left":
                 self.box.l = self.center_x - range
                 self.box.r = self.center_x
                 self.box.t = self.center_y + 16
                 self.box.b = self.center_y - 16
-            if self.eye_pos == "up":
+            elif self.eye_pos == "up":
                 self.box.l = self.center_x - 16
                 self.box.r = self.center_x + 16
                 self.box.t = self.center_y + range
                 self.box.b = self.center_y
-            if self.eye_pos == "down":
+            elif self.eye_pos == "down":
                 self.box.l = self.center_x - 16
                 self.box.r = self.center_x + 16
                 self.box.t = self.center_y
@@ -131,8 +148,10 @@ class Player(arcade.Sprite):
 
             # If it's an enemy kill it
             for enemy in self.enemy_list:
+                print(enemy)
                 if (self.box.l < enemy.center_x < self.box.r and
                         self.box.b < enemy.center_y < self.box.t):
+                    print(enemy)
                     enemy.health = 0
                     arcade.play_sound(self.sound_mapping['knife_hit'])
                     arcade.play_sound(self.sound_mapping['demon_die'])

@@ -175,6 +175,7 @@ class MyApplication(arcade.Window):
 
         self.player_sprite.fireball_list = self.fireball_list
         self.player_sprite.arrow_list = self.arrow_list
+        self.player_sprite.enemy_list = self.enemy_list
         self.player_sprite.sound_mapping = self.sound_mapping
         self.all_sprites_list.append(self.player_sprite)
 
@@ -350,7 +351,7 @@ class MyApplication(arcade.Window):
 
         if self.player_sprite.is_alive:
             # Render the arrow count text
-            arrow_text = ''.join(["Arrows:", str(self.player_sprite.ammo)])
+            arrow_text = ' '.join(["Arrows:", str(self.player_sprite.ammo)])
             arcade.draw_text(arrow_text, self.view_left + 8,
                              self.view_bottom + 8, arcade.color.WHITE)
 
@@ -399,22 +400,7 @@ class MyApplication(arcade.Window):
             self.player_sprite.change_movement_with_key(key)
 
     def on_key_release(self, key, modifiers):
-        # Helps prevent the player from getting stuck
-        if key == arcade.key.UP or key == arcade.key.W:
-            if self.player_sprite.change_y > 0:
-                self.player_sprite.change_y = 0
-
-        if key == arcade.key.DOWN or key == arcade.key.S:
-            if self.player_sprite.change_y < 0:
-                self.player_sprite.change_y = 0
-
-        if key == arcade.key.RIGHT or key == arcade.key.D:
-            if self.player_sprite.change_x > 0:
-                self.player_sprite.change_x = 0
-
-        if key == arcade.key.LEFT or key == arcade.key.A:
-            if self.player_sprite.change_x < 0:
-                self.player_sprite.change_x = 0
+        self.player_sprite.stop_movement_with_key(key)
 
     def update(self, delta_time):
         self.curtime += 1
