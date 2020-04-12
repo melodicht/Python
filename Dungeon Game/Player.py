@@ -24,8 +24,13 @@ class Player(arcade.Sprite):
     death_sound = False
 
     arrow_list = None
+    ammo_list = None
     fireball_list = None
+    potion_list = None
+    coin_list = None
     sound_mapping = None
+
+    game_manager = None
 
     def __init__(self, file_name, center_x, center_y, ammo):
         super().__init__(file_name, center_x=center_x, center_y=center_y)
@@ -55,6 +60,10 @@ class Player(arcade.Sprite):
                         self.set_texture(1)
                     if self.eye_pos == "down":
                         self.set_texture(3)
+
+            self.drink_potion_on_collision()
+            self.pick_arrows_on_collision()
+            self.pick_coins_on_collision()
 
             # Makes player slide on death
             if self.health <= 0:
@@ -111,6 +120,42 @@ class Player(arcade.Sprite):
         if key == arcade.key.LEFT or key == arcade.key.A:
             if self.change_x < 0:
                 self.change_x = 0
+
+    def drink_potion_on_collision(self):
+        """Player drinks potion on collision with the item."""
+        potion_list = arcade.check_for_collision_with_list(
+            self, self.potion_list
+        )
+        for item in potion_list:
+            if self.curtime > item.force:
+                arcade.play_sound(self.sound_mapping['gulp'])
+                item.kill()
+                if self.health <= 90:
+                    self.health += 10
+                else:
+                    self.health += (100 - self.health)
+
+    def pick_arrows_on_collision(self):
+        """Player picks up arrows on collision with the item."""
+        ammo_list = arcade.check_for_collision_with_list(
+            self, self.ammo_list
+        )
+        for item in ammo_list:
+            if self.curtime > item.force:
+                arcade.play_sound(self.sound_mapping['pickup_coin'])
+                item.kill()
+                self.ammo += 3
+
+    def pick_coins_on_collision(self):
+        """Player picks up coins on collision with the item."""
+        coin_list = arcade.check_for_collision_with_list(
+            self, self.coin_list
+        )
+        for item in coin_list:
+            if self.curtime > item.force:
+                arcade.play_sound(self.sound_mapping['coin_pickup'])
+                item.kill()
+                self.game_manager.score += 1
 
     def stab(self):
         # Makes it so if you spam the stab button the delay takes longer

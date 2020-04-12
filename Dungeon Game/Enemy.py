@@ -12,6 +12,9 @@ class Enemy(arcade.Sprite):
     health = 100
     death_animation = 0
 
+    enemy_list = None
+    player_sprite = None
+
     def _init_(self, file_name, center_x, center_y, scale):
         super().__init__(file_name, center_x=center_x, center_y=center_y,
                          scale=scale)
@@ -78,3 +81,15 @@ class Enemy(arcade.Sprite):
         else:
             # Prevent detection noise from playing every frame
             self.growl = False
+
+    @staticmethod
+    def kill_player_on_collision(player, enemy_list):
+        """Kills player on collision with player."""
+        for enemy in enemy_list:
+            enemy_check = arcade.check_for_collision_with_list(
+                player, enemy_list
+            )
+            for enemy in enemy_check:
+                if enemy.health > 0:
+                    player.health = 0
+                    enemy.set_texture(3)

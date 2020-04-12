@@ -173,9 +173,13 @@ class MyApplication(arcade.Window):
             texture = arcade.load_texture(player_texture_file)
             self.player_sprite.append_texture(texture)
 
+        self.player_sprite.game_manager = self
         self.player_sprite.fireball_list = self.fireball_list
         self.player_sprite.arrow_list = self.arrow_list
+        self.player_sprite.ammo_list = self.ammo_list
+        self.player_sprite.potion_list = self.potion_list
         self.player_sprite.enemy_list = self.enemy_list
+        self.player_sprite.coin_list = self.coin_list
         self.player_sprite.sound_mapping = self.sound_mapping
         self.all_sprites_list.append(self.player_sprite)
 
@@ -495,56 +499,14 @@ class MyApplication(arcade.Window):
                 chest.open(self.curtime)
                 arrow.kill()
 
-        # If the player runs into an enemy kill the player
-        for enemy in self.enemy_list:
-            enemy_check = arcade.check_for_collision_with_list(
-                self.player_sprite, self.enemy_list
-            )
-            for enemy in enemy_check:
-                if enemy.health > 0:
-                    self.player_sprite.health = 0
-                    enemy.set_texture(3)
+        Enemy.kill_player_on_collision(self.player_sprite, self.enemy_list)
 
-        # If player runs into a chest open the chest
+        # If player runs into a chest, open the chest
         chest_list = arcade.check_for_collision_with_list(
             self.player_sprite, self.chest_list
         )
         for chest in chest_list:
             chest.open(self.curtime)
-
-        # If player runs into the ammo pickup give arrows and remove it
-        ammo_list = arcade.check_for_collision_with_list(
-            self.player_sprite, self.ammo_list
-        )
-        for item in ammo_list:
-            if self.curtime > item.force:
-                arcade.play_sound(self.sound_mapping['pickup_coin'])
-                item.kill()
-                self.player_sprite.ammo += 3
-
-        # If player runs into the coin pick it up
-        coin_list = arcade.check_for_collision_with_list(
-            self.player_sprite, self.coin_list
-        )
-        for item in coin_list:
-            if self.curtime > item.force:
-                arcade.play_sound(self.sound_mapping['coin_pickup'])
-                item.kill()
-                self.score += 1
-
-        # If player runs into the potion pickup heal player and remove it
-        potion_list = arcade.check_for_collision_with_list(
-            self.player_sprite, self.potion_list
-        )
-        for item in potion_list:
-            if self.curtime > item.force:
-                arcade.play_sound(self.sound_mapping['gulp'])
-                item.kill()
-                if self.player_sprite.health <= 90:
-                    self.player_sprite.health += 10
-                else:
-                    self.player_sprite.health += (100 -
-                                                  self.player_sprite.health)
 
         # If you walk into the end door go into a new dungeon
         y = self.doorpos * 32
