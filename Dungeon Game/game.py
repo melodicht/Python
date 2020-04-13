@@ -104,8 +104,7 @@ class MyApplication(arcade.Window):
         image_file = path / "images/controls.png"
         self.controls = arcade.load_texture(image_file)
 
-        self.castle_door_opened_file = "images/castle_door_open.png"
-        self.castle_door_closed_file = "images/castle_door_closed.png"
+        self.castle_door_file = "images/door.png"
 
         self.demon_texture_file = path / "images/demon.png"
 
@@ -241,7 +240,7 @@ class MyApplication(arcade.Window):
                 self.blocks[0][16] = True
                 self.doorpos = 16
                 self.initialize_wall(
-                    self.castle_door_opened_file,
+                    self.castle_door_file,
                     (BR_X - 1),
                     16
                 )
@@ -279,7 +278,7 @@ class MyApplication(arcade.Window):
             if self.ng_x >= BR_X - 1:
                 self.doorpos = self.ng_y
                 self.initialize_wall(
-                    self.castle_door_opened_file,
+                    self.castle_door_file,
                     self.ng_x,
                     self.ng_y
                 )
@@ -309,7 +308,7 @@ class MyApplication(arcade.Window):
                     self.initialize_enemy(x, y)
 
         # Create end door
-        self.initialize_wall(self.castle_door_closed_file, 0, 5)
+        self.initialize_wall(self.castle_door_file, 0, 5)
 
     def change_direction(self):
         # Randomly change to an adjacent direction.
