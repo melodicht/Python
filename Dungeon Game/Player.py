@@ -43,23 +43,7 @@ class Player(arcade.Sprite):
             # Stab animation
             if self.knife_delay != 0:
                 if self.knife_delay - 10 > self.curtime:
-                    if self.eye_pos == "up":
-                        self.set_texture(5)
-                    if self.eye_pos == "right":
-                        self.set_texture(6)
-                    if self.eye_pos == "left":
-                        self.set_texture(7)
-                    if self.eye_pos == "down":
-                        self.set_texture(8)
-                else:
-                    if self.eye_pos == "up":
-                        self.set_texture(2)
-                    if self.eye_pos == "right":
-                        self.set_texture(0)
-                    if self.eye_pos == "left":
-                        self.set_texture(1)
-                    if self.eye_pos == "down":
-                        self.set_texture(3)
+                    pass  # Knife animation
 
             self.drink_potion_on_collision()
             self.pick_arrows_on_collision()
@@ -89,19 +73,19 @@ class Player(arcade.Sprite):
     def change_movement_with_key(self, key):
         if key == arcade.key.UP or key == arcade.key.W:
             self.change_y = self.movement_speed
-            self.set_texture(2)
+            self.angle = 0
             self.eye_pos = "up"
         elif key == arcade.key.DOWN or key == arcade.key.S:
             self.change_y = -self.movement_speed
-            self.set_texture(3)
+            self.angle = 180
             self.eye_pos = "down"
         elif key == arcade.key.LEFT or key == arcade.key.A:
             self.change_x = -self.movement_speed
-            self.set_texture(1)
+            self.angle = 90
             self.eye_pos = "left"
         elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.change_x = self.movement_speed
-            self.set_texture(0)
+            self.angle = 270
             self.eye_pos = "right"
 
     def stop_movement_with_key(self, key):
@@ -244,7 +228,7 @@ class Player(arcade.Sprite):
             self.arrow_list.append(arrow)
 
     def die(self):
-        self.set_texture(4)
+        # self.set_texture(4)
         self.is_alive = False
         if self.change_x > 0:
             self.change_x -= .1
