@@ -1,5 +1,5 @@
 import math
-from collections import namedtuple
+from types import SimpleNamespace
 
 import arcade
 
@@ -7,14 +7,9 @@ from assets import path
 from projectiles import Arrow
 
 
-# Left, right, top, bottom
-Box = namedtuple('Box', ['l', 'r', 't', 'b'])
-
-
 class Player(arcade.Sprite):
     is_alive = True
     eye_pos = 'right'
-    box = Box(0, 0, 0, 0)
 
     health = 100
     movement_speed = 3
@@ -35,6 +30,14 @@ class Player(arcade.Sprite):
     def __init__(self, file_name, center_x, center_y, ammo):
         super().__init__(file_name, center_x=center_x, center_y=center_y)
         self.ammo = ammo
+        self.initialize_hit_range()
+
+    def initialize_hit_range(self):
+        self.box = SimpleNamespace()
+        self.box.left = 0.00
+        self.box.right = 0.00
+        self.box.top = 0.00
+        self.box.bottom = 0.00
 
     def update(self):
         self.curtime += 1
@@ -153,42 +156,40 @@ class Player(arcade.Sprite):
             arcade.play_sound(self.sound_mapping['knife_swing'])
 
             # Determine if something is in front of you
-            range = 72 * 5
+            hit_range = 32 * 1.5
             if self.eye_pos == "right":
-                self.box.l = self.center_x
-                self.box.r = self.center_x + range
-                self.box.t = self.center_y + 16
-                self.box.b = self.center_y - 16
+                self.box.left = self.center_x
+                self.box.right = self.center_x + hit_range
+                self.box.top = self.center_y + 16
+                self.box.bottom = self.center_y - 16
             elif self.eye_pos == "left":
-                self.box.l = self.center_x - range
-                self.box.r = self.center_x
-                self.box.t = self.center_y + 16
-                self.box.b = self.center_y - 16
+                self.box.left = self.center_x - hit_range
+                self.box.right = self.center_x
+                self.box.top = self.center_y + 16
+                self.box.bottom = self.center_y - 16
             elif self.eye_pos == "up":
-                self.box.l = self.center_x - 16
-                self.box.r = self.center_x + 16
-                self.box.t = self.center_y + range
-                self.box.b = self.center_y
+                self.box.left = self.center_x - 16
+                self.box.right = self.center_x + 16
+                self.box.top = self.center_y + hit_range
+                self.box.bottom = self.center_y
             elif self.eye_pos == "down":
-                self.box.l = self.center_x - 16
-                self.box.r = self.center_x + 16
-                self.box.t = self.center_y
-                self.box.b = self.center_y - range
+                self.box.left = self.center_x - 16
+                self.box.right = self.center_x + 16
+                self.box.top = self.center_y
+                self.box.bottom = self.center_y - hit_range
 
             # If it's an enemy kill it
             for enemy in self.enemy_list:
-                print(enemy)
-                if (self.box.l < enemy.center_x < self.box.r and
-                        self.box.b < enemy.center_y < self.box.t):
-                    print(enemy)
+                if (self.box.left < enemy.center_x < self.box.right and
+                        self.box.bottom < enemy.center_y < self.box.top):
                     enemy.health = 0
                     arcade.play_sound(self.sound_mapping['knife_hit'])
                     arcade.play_sound(self.sound_mapping['demon_die'])
 
             # If it's a fireball reflect it
             for fireball in self.fireball_list:
-                if (self.box.l < fireball.center_x < self.box.r and
-                        self.box.b < fireball.center_y < self.box.t):
+                if (self.box.left < fireball.center_x < self.box.right and
+                        self.box.bottom < fireball.center_y < self.box.top):
                     fireball.reflected = True
                     fireball.change_x *= -1
                     fireball.change_y *= -1
