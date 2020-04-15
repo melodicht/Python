@@ -11,9 +11,12 @@ class Player(arcade.Sprite):
     is_alive = True
     eye_pos = 'right'
 
+    updates_per_frame = 5
+
     health = 100
     movement_speed = 3
     curtime = 0
+    cur_texture = 0  # Used for walking
     knife_delay = 0
     knife_rate = 0
     death_sound = False
@@ -28,7 +31,8 @@ class Player(arcade.Sprite):
     game_manager = None
 
     def __init__(self, file_name, center_x, center_y, ammo):
-        super().__init__(file_name, center_x=center_x, center_y=center_y)
+        super().__init__(center_x=center_x, center_y=center_y)
+        self.initialize_textures(file_name)
         self.ammo = ammo
         self.initialize_hit_range()
 
@@ -39,14 +43,40 @@ class Player(arcade.Sprite):
         self.box.top = 0.00
         self.box.bottom = 0.00
 
+    def initialize_textures(self, file_name):
+        metadata = {
+            'walk': 6,
+            'knife': 1,
+            'static': 1
+        }
+        texture_gen = self.load_texture_with_spritesheet(file_name, **metadata)
+
+        # walk textures
+        self.walk_textures = []
+        for _ in range(metadata['walk']):
+            self.walk_textures.append(next(texture_gen))
+
+        # knife texture
+        self.knife_texture = next(texture_gen)
+
+        # static texture
+        self.static_texture = next(texture_gen)
+
+        self.texture = self.static_texture
+
+    def load_texture_with_spritesheet(self, file_name, **kwargs):
+        for i in range(sum(kwargs.values())):
+            texture = arcade.load_texture(file_name, x=i*32, y=0,
+                                          width=32, height=32)
+            yield texture
+
     def update(self):
         self.curtime += 1
 
         if self.is_alive:
             # Stab animation
-            if self.knife_delay != 0:
-                if self.knife_delay - 10 > self.curtime:
-                    pass  # Knife animation
+            if self.knife_delay != 0 and self.knife_delay - 10 > self.curtime:
+                self.texture = self.knife_texture
 
             self.drink_potion_on_collision()
             self.pick_arrows_on_collision()
@@ -60,6 +90,19 @@ class Player(arcade.Sprite):
             if not self.is_alive and not self.death_sound:
                 arcade.play_sound(self.sound_mapping['char_die'])
                 self.death_sound = True
+
+            # Static texture if not moving
+            if int(self.change_x) == 0 and int(self.change_y) == 0:
+                self.texture = self.static_texture
+                return
+
+            # Walking texture
+            self.cur_texture += 1
+            if self.cur_texture > 5 * self.updates_per_frame:
+                self.cur_texture = 0
+            self.texture = self.walk_textures[
+                self.cur_texture // self.updates_per_frame
+            ]
 
     def render_health_bar(self):
         arcade.draw_rectangle_filled(self.center_x, self.center_y - 16, 24, 4,

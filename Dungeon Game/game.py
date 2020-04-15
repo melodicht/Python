@@ -157,20 +157,13 @@ class MyApplication(arcade.Window):
         arcade.play_sound(self.sound_mapping['default'])
 
     def initialize_player(self, spawn_point):
-        # player_texture_files = get_file_paths('player_textures.txt')
-
         # Initialize player sprite
         self.player_sprite = Player(
-            path / "images/archer/main.png",
+            path / "images/archer/main_char_spritesheet.png",
             center_x=spawn_point.x,
             center_y=spawn_point.y,
             ammo=self.player_ammo
         )
-
-        # Load the rest of the textures
-        # for player_texture_file in player_texture_files:
-        #     texture = arcade.load_texture(player_texture_file)
-        #     self.player_sprite.append_texture(texture)
 
         self.player_sprite.game_manager = self
         self.player_sprite.fireball_list = self.fireball_list
