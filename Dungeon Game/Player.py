@@ -71,12 +71,12 @@ class Player(arcade.Sprite):
             yield texture
 
     def update(self):
-        self.curtime += 1
-
         if self.is_alive:
             # Stab animation
-            if self.knife_delay != 0 and self.knife_delay - 10 > self.curtime:
+            if (self.knife_delay != 0 and
+                    self.knife_delay - 10 > self.game_manager.curtime):
                 self.texture = self.knife_texture
+                return
 
             self.drink_potion_on_collision()
             self.pick_arrows_on_collision()
@@ -97,12 +97,15 @@ class Player(arcade.Sprite):
                 return
 
             # Walking texture
-            self.cur_texture += 1
-            if self.cur_texture > 5 * self.updates_per_frame:
-                self.cur_texture = 0
-            self.texture = self.walk_textures[
-                self.cur_texture // self.updates_per_frame
-            ]
+            self.texture = next(self.update_walk_texture())
+
+    def update_walk_texture(self):
+        self.cur_texture += 1
+        if self.cur_texture > 5 * self.updates_per_frame:
+            self.cur_texture = 0
+        yield self.walk_textures[
+            self.cur_texture // self.updates_per_frame
+        ]
 
     def render_health_bar(self):
         arcade.draw_rectangle_filled(self.center_x, self.center_y - 16, 24, 4,
@@ -157,7 +160,7 @@ class Player(arcade.Sprite):
             self, self.potion_list
         )
         for item in potion_list:
-            if self.curtime > item.force:
+            if self.game_manager.curtime > item.force:
                 arcade.play_sound(self.sound_mapping['gulp'])
                 item.kill()
                 if self.health <= 90:
@@ -171,7 +174,7 @@ class Player(arcade.Sprite):
             self, self.ammo_list
         )
         for item in ammo_list:
-            if self.curtime > item.force:
+            if self.game_manager.curtime > item.force:
                 arcade.play_sound(self.sound_mapping['pickup_coin'])
                 item.kill()
                 self.ammo += 3
@@ -182,20 +185,20 @@ class Player(arcade.Sprite):
             self, self.coin_list
         )
         for item in coin_list:
-            if self.curtime > item.force:
+            if self.game_manager.curtime > item.force:
                 arcade.play_sound(self.sound_mapping['coin_pickup'])
                 item.kill()
                 self.game_manager.score += 1
 
     def stab(self):
         # Makes it so if you spam the stab button the delay takes longer
-        if self.curtime < self.knife_rate:
+        if self.game_manager.curtime < self.knife_rate:
             self.knife_rate += 5
 
-        if self.curtime > self.knife_rate:
+        if self.game_manager.curtime > self.knife_rate:
             # Makes it so if you time it right you can stab quickly
-            self.knife_delay = self.curtime + 20
-            self.knife_rate = self.curtime + 20
+            self.knife_delay = self.game_manager.curtime + 20
+            self.knife_rate = self.game_manager.curtime + 20
             arcade.play_sound(self.sound_mapping['knife_swing'])
 
             # Determine if something is in front of you
@@ -237,6 +240,7 @@ class Player(arcade.Sprite):
                     fireball.change_x *= -1
                     fireball.change_y *= -1
                     arcade.play_sound(self.sound_mapping['knife_hit'])
+        print(self.knife_rate, self.knife_delay)
 
     def shoot(self):
         # If you don't have any ammo stab instead

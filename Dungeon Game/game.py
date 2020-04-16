@@ -277,7 +277,6 @@ class MyApplication(arcade.Window):
                 )
                 break
 
-    def generate_map(self):
         self.blocks[1][5] = False
         self.generate_path()
 
